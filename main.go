@@ -37,6 +37,10 @@ func main() {
 			Usage: "loop content upon reaching end",
 		},
 		cli.BoolFlag{
+			Name:   "movie, m",
+			Usage:  "Input as ascii movie. Ignores delay option. Preview won't work",
+		},
+		cli.BoolFlag{
 			Name:  "preview",
 			Usage: "preview on terminal instead of posting",
 		},
@@ -63,7 +67,10 @@ func main() {
 		}
 
 		var frames chan string
-		if c.Bool("loop") {
+		if c.Bool("movie") {
+			frames = MovieScanner(c.Bool("loop"))
+			delay = 0.001
+		} else if c.Bool("loop") {
 			frames = LoopingStdinScanner()
 		} else {
 			frames = StdinScanner()

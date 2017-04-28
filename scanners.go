@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strconv"
 )
 
 // StdinScanner will scan over STDIN, emitting a result on the returned channel
@@ -48,6 +49,58 @@ func LoopingStdinScanner() chan string {
 		for {
 			for _, frame := range frames {
 				ch <- frame
+			}
+		}
+	}()
+	return ch
+}
+
+type movie_frame struct {
+    duration int
+    frame string
+}
+
+func MovieScanner(loop_movie bool) chan string {
+	ch := make(chan string)
+	go func() {
+		var frames []movie_frame
+		reader := bufio.NewScanner(os.Stdin)
+		var pos int = 0
+		var dur int
+		var err error
+		var text string = ""
+		for reader.Scan() {
+			var line string = reader.Text()
+			if (pos==0) {
+				dur, err = strconv.Atoi(line)
+				if err != nil {
+					fmt.Fprintln(os.Stderr, "reading movie duration:", err)
+					os.Exit(1)
+				}
+			} else {
+				if (len(text)>0) {
+					text+="\n"
+				}
+				text+=line
+			}
+			pos++;
+			if (pos>13) {
+				pos=0
+				frames = append (frames, movie_frame{duration: dur,frame: text})
+				text = ""
+			}
+		}
+		if err := reader.Err(); err != nil {
+			fmt.Fprintln(os.Stderr, "reading standard input:", err)
+			os.Exit(1)
+		}
+
+		for {
+			for _, frame := range frames {
+				ch <- "```"+frame.frame+"```"
+			}
+			if ! loop_movie {
+				break
 			}
 		}
 	}()
